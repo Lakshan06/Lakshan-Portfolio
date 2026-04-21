@@ -21,6 +21,7 @@ import vibeathon3 from "../assets/vibeathon3.jpg";
 import inno2      from "../assets/inno2.jpg";
 import inno3      from "../assets/inno3.jpg";
 import inno4      from "../assets/inno4.jpg";
+import inno5      from "../assets/inno5.jpg";
 import dhan1      from "../assets/dhan1.jpg";
 import dhan2      from "../assets/dhan2.jpg";
 import vibestate1 from "../assets/vibestate1.jpg";
@@ -198,7 +199,7 @@ const achievements = [
     id: 1,
     title: "Vibeathon — Hackathon",
     event: "Vibe with Singularity · Thoughtworks, Gurugram",
-    date: "2025",
+    date: "2026",
     badge: "Top 27 / 750+ Teams",
     icon: "⚡",
     color: "#f59e0b",
@@ -216,7 +217,7 @@ const achievements = [
     color: "#6366f1",
     description:
       "Advanced to the Finals of VIT's InnoHack '26 among 21 elite teams. We engineered EduFinAI — an AI-driven, explainable financial workflow automation system for educational institutions, built on fairness, compliance, and human-in-the-loop decision making.",
-    images: [inno2, inno3, inno4],
+    images: [inno2, inno3, inno4, inno5],
   },
   {
     id: 3,
@@ -234,7 +235,7 @@ const achievements = [
     id: 4,
     title: "Vibestate — Hackathon",
     event: "Vibestate Challenge · Open Category",
-    date: "2025",
+    date: "2026",
     badge: "Top 10 / 200+ Teams",
     icon: "🥇",
     color: "#ec4899",

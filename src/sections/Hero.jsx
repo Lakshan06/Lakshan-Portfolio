@@ -168,40 +168,80 @@ export default function Hero() {
             transitionDuration={300}
             className="fuzzy-canvas"
           >
-            Full Stack Developer  |  AI Enthusiast
+            Modern Web Developer  |  Digital Architect
           </ResponsiveFuzzy>
         </div>
 
         {/* ── CTA button ── */}
         <a
           href="#about"
-          style={{
-            pointerEvents: "auto",
-            marginTop: "1.75rem",
-            padding: "0.65rem 1.75rem",
-            borderRadius: "9999px",
-            border: "2px solid rgba(255,255,255,0.4)",
-            color: "#fff",
-            fontSize: "clamp(0.8rem, 3vw, 0.95rem)",
-            fontWeight: 600,
-            textDecoration: "none",
-            backdropFilter: "blur(6px)",
-            background: "rgba(255,255,255,0.08)",
-            transition: "background 0.25s, border-color 0.25s",
-            display: "inline-block",
-            whiteSpace: "nowrap",
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.18)";
-            e.currentTarget.style.borderColor = "rgba(255,255,255,0.7)";
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-            e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)";
-          }}
+          className="hero-cta-btn"
+          style={{ pointerEvents: "auto", marginTop: "1.25rem" }}
         >
-          Explore my work ↓
+          <span className="hero-cta-text">Explore my work</span>
+          <svg className="hero-cta-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
         </a>
+
+        {/* Local styled component for extreme interactivity */}
+        <style>{`
+          .hero-cta-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.8rem 2.2rem;
+            border-radius: 9999px;
+            text-decoration: none;
+            color: #fff;
+            font-size: clamp(0.85rem, 3vw, 0.95rem);
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            z-index: 10;
+          }
+          .hero-cta-btn::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(138, 92, 255, 0.35), rgba(0, 255, 209, 0.25));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: -1;
+          }
+          .hero-cta-btn:hover {
+            transform: translateY(-4px) scale(1.03);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 40px rgba(138, 92, 255, 0.25), 0 0 20px rgba(0, 255, 209, 0.15);
+            padding-left: 2.5rem;
+            padding-right: 1.9rem;
+          }
+          .hero-cta-btn:hover::before {
+            opacity: 1;
+          }
+          .hero-cta-arrow {
+            transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s ease;
+          }
+          @keyframes bounceDown {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(3.5px); }
+          }
+          .hero-cta-btn .hero-cta-arrow {
+            animation: bounceDown 2.2s infinite ease-in-out;
+          }
+          .hero-cta-btn:hover .hero-cta-arrow {
+            animation: none;
+            transform: translateY(4px) scale(1.15);
+            color: #00ffd1;
+          }
+        `}</style>
       </div>
     </section>
   );

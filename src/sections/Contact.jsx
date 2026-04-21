@@ -60,23 +60,24 @@ const contactLinks = [
 
 /* ─── Individual Contact Card ───────────────────────────────── */
 function ContactCard({ item, index }) {
+  const wrapperRef = useRef(null);
   const cardRef = useRef(null);
 
   useEffect(() => {
-    const card = cardRef.current;
-    if (!card) return;
+    const el = wrapperRef.current;
+    if (!el) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          card.style.opacity = "1";
-          card.style.transform = "translateY(0) scale(1)";
+          el.style.opacity = "1";
+          el.style.transform = "translateY(0) scale(1)";
           observer.disconnect();
         }
       },
       { threshold: 0.2 }
     );
-    observer.observe(card);
+    observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
@@ -84,154 +85,197 @@ function ContactCard({ item, index }) {
     const card = cardRef.current;
     if (!card) return;
     const rect = card.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    card.style.transform = `perspective(800px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg) scale(1.03)`;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Smooth spotlight coordinates
+    card.style.setProperty("--mouse-x", `${x}px`);
+    card.style.setProperty("--mouse-y", `${y}px`);
+
+    // 3D Tilt calculation
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -12;
+    const rotateY = ((x - centerX) / centerX) * 12;
+
+    card.style.transform = `perspective(1200px) scale(1.04) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
   };
 
   const handleMouseLeave = () => {
     const card = cardRef.current;
     if (!card) return;
-    card.style.transform = "perspective(800px) rotateY(0deg) rotateX(0deg) scale(1)";
+    card.style.transform = "perspective(1200px) scale(1) rotateX(0deg) rotateY(0deg)";
   };
 
   return (
-    <a
-      href={item.href}
-      target={item.type === "button" ? "_blank" : "_self"}
-      rel="noopener noreferrer"
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+    <div
+      ref={wrapperRef}
       style={{
         opacity: 0,
-        transform: "translateY(40px) scale(0.95)",
-        transition: `opacity 0.6s ease ${index * 0.1}s, transform 0.6s cubic-bezier(.22,1,.36,1) ${index * 0.1}s`,
-        textDecoration: "none",
-        position: "relative",
-        borderRadius: "1.5rem",
-        padding: "2px",
-        background: `linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.01))`,
-        cursor: "pointer",
-        willChange: "transform",
-        display: "block",
+        transform: "translateY(50px) scale(0.9)",
+        transition: `opacity 0.7s ease ${index * 0.12}s, transform 0.7s cubic-bezier(.22,1,.36,1) ${index * 0.12}s`,
+        willChange: "opacity, transform"
       }}
-      className="contact-card-wrapper"
     >
-      {/* Glow on hover */}
-      <div
-        className="contact-glow"
+      <a
+        href={item.href}
+        target={item.type === "button" ? "_blank" : "_self"}
+        rel="noopener noreferrer"
+        ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
         style={{
-          position: "absolute",
-          inset: 0,
-          background: `radial-gradient(circle at 50% 50%, ${item.color}35, transparent 70%)`,
-          opacity: 0,
-          transition: "opacity 0.4s ease",
-          zIndex: 0,
-          borderRadius: "1.5rem",
-        }}
-      />
-
-      {/* Card Content */}
-      <div
-        style={{
+          textDecoration: "none",
           position: "relative",
-          zIndex: 1,
-          borderRadius: "calc(1.5rem - 2px)",
-          background: "linear-gradient(145deg, rgba(12,8,20,0.95) 0%, rgba(5,2,10,0.98) 100%)",
-          backdropFilter: "blur(20px)",
-          padding: "2.2rem 1.5rem",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "1.25rem",
-          height: "100%",
-          textAlign: "center",
-          transition: "background 0.3s",
+          borderRadius: "1.5rem",
+          padding: "1px",
+          background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))",
+          cursor: "pointer",
+          display: "block",
+          transform: "perspective(1200px) scale(1) rotateX(0deg) rotateY(0deg)",
+          transition: "transform 0.15s ease-out",
+          transformStyle: "preserve-3d"
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "linear-gradient(145deg, rgba(20,12,35,0.95) 0%, rgba(10,5,18,0.98) 100%)";
-          e.currentTarget.previousSibling.style.opacity = "1"; // Show glow
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "linear-gradient(145deg, rgba(12,8,20,0.95) 0%, rgba(5,2,10,0.98) 100%)";
-          e.currentTarget.previousSibling.style.opacity = "0"; // Hide glow
-        }}
+        className="contact-card-wrapper"
       >
+        {/* Dynamic Edge Spotlight Glow */}
+        <div
+          className="contact-border-glow"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `radial-gradient(400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), ${item.color}90, transparent 40%)`,
+            opacity: 0,
+            transition: "opacity 0.4s ease",
+            zIndex: 0,
+            borderRadius: "1.5rem",
+          }}
+        />
+
+        {/* Card Content Wrapper */}
         <div
           style={{
-            width: 60,
-            height: 60,
-            borderRadius: "50%",
-            background: `rgba(255,255,255,0.03)`,
-            border: `1px solid rgba(255,255,255,0.08)`,
+            position: "relative",
+            zIndex: 1,
+            borderRadius: "calc(1.5rem - 1px)",
+            background: "linear-gradient(145deg, rgba(12,8,20,0.85) 0%, rgba(5,2,10,0.95) 100%)",
+            backdropFilter: "blur(24px)",
+            padding: "2.5rem 1.5rem",
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            color: item.color,
-            boxShadow: `0 8px 32px ${item.color}15`,
-            transition: "transform 0.4s cubic-bezier(.22,1,.36,1), box-shadow 0.4s ease",
+            gap: "1.5rem",
+            height: "100%",
+            textAlign: "center",
+            transition: "background 0.4s",
+            overflow: "hidden", // Contains the internal splash
+            transformStyle: "preserve-3d" // Pass 3D depth to children
           }}
-          className="contact-icon-wrap"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "linear-gradient(145deg, rgba(20,12,35,0.9) 0%, rgba(10,5,18,0.98) 100%)";
+            e.currentTarget.previousSibling.style.opacity = "1"; // Show edge glow
+            e.currentTarget.querySelector(".contact-bg-splash").style.opacity = "1"; // Show inner splash
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "linear-gradient(145deg, rgba(12,8,20,0.85) 0%, rgba(5,2,10,0.95) 100%)";
+            e.currentTarget.previousSibling.style.opacity = "0"; // Hide edge glow
+            if (e.currentTarget.querySelector(".contact-bg-splash")) {
+              e.currentTarget.querySelector(".contact-bg-splash").style.opacity = "0"; // Hide inner splash
+            }
+          }}
         >
-          {item.icon}
-        </div>
-
-        <div style={{ width: "100%" }}>
-          <p
+          {/* Inner Mouse-Tracking Splash */}
+          <div 
+            className="contact-bg-splash"
             style={{
-              margin: "0 0 0.5rem",
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              color: "rgba(255,255,255,0.45)",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
+              position: "absolute",
+              inset: 0,
+              background: `radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), ${item.color}15, transparent 50%)`,
+              opacity: 0,
+              transition: "opacity 0.5s ease",
+              pointerEvents: "none",
+              zIndex: 0
             }}
-          >
-            {item.label}
-          </p>
+          />
 
-          {item.type === "text" ? (
-            <h3
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              background: `rgba(255,255,255,0.03)`,
+              border: `1px solid rgba(255,255,255,0.08)`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: item.color,
+              boxShadow: `0 8px 32px ${item.color}20`,
+              transition: "transform 0.4s cubic-bezier(.22,1,.36,1), box-shadow 0.4s ease",
+              position: "relative",
+              zIndex: 1,
+              transform: "translateZ(30px)" // Adds 3D pop effect
+            }}
+            className="contact-icon-wrap"
+          >
+            {item.icon}
+          </div>
+
+          <div style={{ width: "100%", position: "relative", zIndex: 1, transform: "translateZ(20px)" }}>
+            <p
               style={{
-                margin: 0,
-                fontSize: "1.05rem",
-                fontWeight: 700,
-                color: "#fff",
-                lineHeight: 1.4,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {item.value}
-            </h3>
-          ) : (
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "0.5rem 1.25rem",
-                borderRadius: "9999px",
-                background: `rgba(255,255,255,0.05)`,
-                border: `1px solid rgba(255,255,255,0.1)`,
-                color: "#fff",
-                fontSize: "0.85rem",
+                margin: "0 0 0.6rem",
+                fontSize: "0.78rem",
                 fontWeight: 600,
-                marginTop: "0.2rem",
-                boxShadow: `0 4px 14px ${item.color}10`,
-                transition: "background 0.3s, border-color 0.3s, transform 0.3s",
+                color: "rgba(255,255,255,0.5)",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
               }}
-              className="contact-btn"
             >
-              {item.btnText}
-            </div>
-          )}
+              {item.label}
+            </p>
+
+            {item.type === "text" ? (
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: "1.1rem",
+                  fontWeight: 700,
+                  color: "#fff",
+                  lineHeight: 1.4,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {item.value}
+              </h3>
+            ) : (
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0.6rem 1.4rem",
+                  borderRadius: "9999px",
+                  background: `rgba(255,255,255,0.05)`,
+                  border: `1px solid rgba(255,255,255,0.15)`,
+                  color: "#fff",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  marginTop: "0.2rem",
+                  boxShadow: `0 4px 16px ${item.color}15`,
+                  transition: "all 0.3s ease",
+                }}
+                className="contact-btn"
+              >
+                {item.btnText}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </a>
+      </a>
+    </div>
   );
 }
 
@@ -377,13 +421,14 @@ export default function Contact() {
       {/* Global styles for this section */}
       <style>{`
         .contact-card-wrapper:hover .contact-icon-wrap {
-          transform: translateY(-4px) scale(1.08) !important;
-          box-shadow: 0 10px 30px rgba(255,255,255,0.08) !important;
+          transform: translateZ(40px) translateY(-5px) scale(1.1) !important;
+          box-shadow: 0 15px 35px rgba(255,255,255,0.15) !important;
         }
         .contact-card-wrapper:hover .contact-btn {
-          background: rgba(255,255,255,0.12) !important;
-          border-color: rgba(255,255,255,0.2) !important;
+          background: rgba(255,255,255,0.15) !important;
+          border-color: rgba(255,255,255,0.3) !important;
           transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(255,255,255,0.1) !important;
         }
       `}</style>
     </section>
