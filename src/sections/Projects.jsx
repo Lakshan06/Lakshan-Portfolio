@@ -67,18 +67,25 @@ const projects = [
 /* Duplicate for seamless infinite loop */
 const ITEMS = [...projects, ...projects];
 
-const CARD_WIDTH  = 380; // px
-const CARD_GAP    = 28;  // px
-const STEP        = CARD_WIDTH + CARD_GAP;
-const SPEED       = 0.55; // px per animation frame
-const HALF_LIST   = projects.length * STEP;
+const CARD_GAP = 20; // px
+
+function getCardWidth() {
+  if (typeof window === 'undefined') return 380;
+  const vw = window.innerWidth;
+  if (vw < 480)  return vw - 40;           // mobile: full-width minus 40px margins
+  if (vw < 768)  return Math.min(vw - 48, 360); // large mobile / small tablet
+  return 380;                               // desktop
+}
+
+const SPEED = 0.45; // px per animation frame (slightly slower = smoother on mobile)
 
 /* ─── Card component ────────────────────────────────────────────── */
-function ProjectCard({ project }) {
+function ProjectCard({ project, cardWidth }) {
+  const isNarrow = cardWidth < 360;
   return (
     <div
       style={{
-        width:      CARD_WIDTH,
+        width:      cardWidth,
         flexShrink: 0,
         borderRadius: "1.5rem",
         padding:    "2px",
@@ -98,15 +105,15 @@ function ProjectCard({ project }) {
       {/* Inner card body */}
       <div
         style={{
-          borderRadius: "calc(1.5rem - 2px)",
-          background:   "linear-gradient(145deg, rgba(10,0,20,0.96) 0%, rgba(15,5,30,0.99) 100%)",
-          backdropFilter: "blur(20px)",
-          padding:      "2rem",
-          height:       "100%",
-          display:      "flex",
-          flexDirection:"column",
-          gap:          "1rem",
-          boxSizing:    "border-box",
+          borderRadius:   "calc(1.5rem - 2px)",
+          background:     "linear-gradient(145deg, rgba(10,0,20,0.96) 0%, rgba(15,5,30,0.99) 100%)",
+          backdropFilter: isNarrow ? "none" : "blur(20px)",
+          padding:        isNarrow ? "1.1rem 0.9rem" : "2rem",
+          height:         "100%",
+          display:        "flex",
+          flexDirection:  "column",
+          gap:            isNarrow ? "0.7rem" : "1rem",
+          boxSizing:      "border-box",
         }}
       >
         {/* Header */}
@@ -176,7 +183,7 @@ function ProjectCard({ project }) {
         <div style={{ height: 1, borderRadius: 4, background: project.accent, opacity: 0.22 }} />
 
         {/* Description */}
-        <p style={{ margin: 0, fontSize: "0.868rem", lineHeight: 1.78, color: "rgba(255,255,255,0.58)", flex: 1 }}>
+        <p style={{ margin: 0, fontSize: isNarrow ? "0.78rem" : "0.868rem", lineHeight: isNarrow ? 1.6 : 1.78, color: "rgba(255,255,255,0.58)", flex: 1 }}>
           {project.description}
         </p>
 
@@ -219,9 +226,24 @@ function ProjectCard({ project }) {
 /* ─── Carousel ──────────────────────────────────────────────────── */
 function Carousel() {
   const trackRef   = useRef(null);
-  const posRef     = useRef(0);    // current scroll offset (px)
+  const posRef     = useRef(0);
   const rafRef     = useRef(null);
   const pausedRef  = useRef(false);
+
+  // Reactive card width — recalculates on resize
+  const [cardWidth, setCardWidth] = useState(getCardWidth);
+
+  useEffect(() => {
+    const onResize = () => setCardWidth(getCardWidth());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const isMobileView = cardWidth < 380;
+  const step     = cardWidth + CARD_GAP;
+  const halfList = projects.length * step;
+  const halfListRef = useRef(halfList);
+  useEffect(() => { halfListRef.current = halfList; }, [halfList]);
 
   /* drag state */
   const dragging   = useRef(false);
@@ -232,11 +254,11 @@ function Carousel() {
   /* ── Animation loop ── */
   useEffect(() => {
     const animate = () => {
-      if (!pausedRef.current) {
+      // Skip frames when tab is not visible to avoid stale accumulation
+      if (document.visibilityState !== 'hidden' && !pausedRef.current) {
         posRef.current += SPEED;
-        // seamless wrap: when we've scrolled a full half-list, reset
-        if (posRef.current >= HALF_LIST) {
-          posRef.current -= HALF_LIST;
+        if (posRef.current >= halfListRef.current) {
+          posRef.current -= halfListRef.current;
         }
         if (trackRef.current) {
           trackRef.current.style.transform = `translateX(-${posRef.current}px)`;
@@ -261,8 +283,7 @@ function Carousel() {
     if (!dragging.current) return;
     const delta = dragStartX.current - e.clientX;
     let next    = dragStartPos.current + delta;
-    // wrap
-    next = ((next % HALF_LIST) + HALF_LIST) % HALF_LIST;
+    next = ((next % halfListRef.current) + halfListRef.current) % halfListRef.current;
     posRef.current = next;
     if (trackRef.current) {
       trackRef.current.style.transform = `translateX(-${next}px)`;
@@ -273,7 +294,7 @@ function Carousel() {
     if (!dragging.current) return;
     dragging.current  = false;
     setIsDragging(false);
-    pausedRef.current = false; // resume auto-scroll
+    pausedRef.current = false;
   };
 
   /* touch support */
@@ -286,7 +307,7 @@ function Carousel() {
   const onTouchMove = (e) => {
     const delta = dragStartX.current - e.touches[0].clientX;
     let next    = dragStartPos.current + delta;
-    next = ((next % HALF_LIST) + HALF_LIST) % HALF_LIST;
+    next = ((next % halfListRef.current) + halfListRef.current) % halfListRef.current;
     posRef.current = next;
     if (trackRef.current) {
       trackRef.current.style.transform = `translateX(-${next}px)`;
@@ -310,11 +331,12 @@ function Carousel() {
   return (
     <div
       style={{
-        overflow:  "hidden",
-        width:     "100%",
-        padding:   "2rem 0",          /* vertical breathing room for glow */
-        cursor:    isDragging ? "grabbing" : "grab",
-        userSelect:"none",
+        overflow:    "hidden",
+        width:       "100%",
+        padding:     "2rem 0",
+        cursor:      isDragging ? "grabbing" : "grab",
+        userSelect:  "none",
+        touchAction: "pan-y",
       }}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
@@ -325,18 +347,19 @@ function Carousel() {
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      {/* Track — two full sets of cards side by side */}
+      {/* Track */}
       <div
         ref={trackRef}
         style={{
-          display:   "flex",
-          gap:       CARD_GAP,
-          willChange:"transform",
-          /* no CSS transition here — rAF handles it for smoothness */
+          display:    "flex",
+          gap:        CARD_GAP,
+          willChange: "transform",
+          /* On mobile: indent first card so it has breathing room from screen edge */
+          paddingLeft: isMobileView ? 16 : 0,
         }}
       >
         {ITEMS.map((project, i) => (
-          <ProjectCard key={`${project.id}-${i}`} project={project} />
+          <ProjectCard key={`${project.id}-${i}`} project={project} cardWidth={cardWidth} />
         ))}
       </div>
     </div>
@@ -442,20 +465,20 @@ export default function Projects() {
         </p>
       </div>
 
-      {/* Edge fade masks */}
+      {/* Edge fade masks — narrower on mobile so the card isn't hidden */}
       <div style={{
-        position:"absolute", top:0, left:0, width:120, height:"100%",
+        position:"absolute", top:0, left:0, width:"min(80px, 6vw)", height:"100%",
         background:"linear-gradient(to right, #000, transparent)",
         pointerEvents:"none", zIndex:10,
       }} />
       <div style={{
-        position:"absolute", top:0, right:0, width:120, height:"100%",
+        position:"absolute", top:0, right:0, width:"min(80px, 6vw)", height:"100%",
         background:"linear-gradient(to left, #000, transparent)",
         pointerEvents:"none", zIndex:10,
       }} />
 
-      {/* Carousel */}
-      <div style={{ paddingLeft: 60 }}>
+      {/* Carousel — no extra left padding so first card is fully visible */}
+      <div style={{ paddingLeft: 0 }}>
         <Carousel />
       </div>
 

@@ -2,6 +2,12 @@ import { useEffect, useRef } from "react";
 import ColorBends from "../components/ColorBends";
 import FuzzyText from "../components/FuzzyText";
 
+// Detect mobile once at module load — used to reduce GPU/CPU work
+const IS_MOBILE =
+  typeof window !== 'undefined' &&
+  (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    window.matchMedia('(max-width: 768px)').matches);
+
 /**
  * Renders FuzzyText at a FIXED font size (max quality canvas),
  * then uses CSS transform:scale() to fit the container.
@@ -84,12 +90,12 @@ export default function Hero() {
       <ColorBends
         colors={["#ff5c7a", "#8a5cff", "#00ffd1"]}
         rotation={0}
-        speed={0.2}
+        speed={IS_MOBILE ? 0.12 : 0.2}  /* slower on mobile saves GPU cycles */
         scale={1}
         frequency={1}
         warpStrength={1}
-        mouseInfluence={1}
-        parallax={0.5}
+        mouseInfluence={IS_MOBILE ? 0 : 1}  /* no mouse on mobile */
+        parallax={IS_MOBILE ? 0 : 0.5}       /* no parallax on mobile */
         noise={0.1}
         transparent
         autoRotate={0}
@@ -140,11 +146,11 @@ export default function Hero() {
             color="#ffffff"
             baseIntensity={0.15}
             hoverIntensity={0.5}
-            enableHover
+            enableHover={!IS_MOBILE}
             gradient={["#ffffff", "#d4b4fe", "#ffffff"]}
             direction="horizontal"
             fuzzRange={28}
-            fps={30}
+            fps={IS_MOBILE ? 15 : 30}
             transitionDuration={300}
             className="fuzzy-canvas"
           >
@@ -161,10 +167,10 @@ export default function Hero() {
             color="rgba(255,255,255,0.78)"
             baseIntensity={0.08}
             hoverIntensity={0.35}
-            enableHover
+            enableHover={!IS_MOBILE}
             direction="horizontal"
             fuzzRange={14}
-            fps={30}
+            fps={IS_MOBILE ? 15 : 30}
             transitionDuration={300}
             className="fuzzy-canvas"
           >

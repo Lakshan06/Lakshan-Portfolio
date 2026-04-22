@@ -163,7 +163,10 @@ export default function ColorBends({
     });
     rendererRef.current = renderer;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // Use max DPR of 1 on mobile to prevent lag; up to 2 on desktop
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+      window.matchMedia('(max-width: 768px)').matches;
+    renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0x000000, transparent ? 0 : 1);
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
@@ -190,6 +193,11 @@ export default function ColorBends({
     }
 
     const loop = () => {
+      // Skip rendering when tab is hidden — prevents stale double-RAF on return
+      if (document.visibilityState === 'hidden') {
+        rafRef.current = requestAnimationFrame(loop);
+        return;
+      }
       const dt = clock.getDelta();
       const elapsed = clock.elapsedTime;
       material.uniforms.uTime.value = elapsed;
@@ -208,9 +216,22 @@ export default function ColorBends({
       renderer.render(scene, camera);
       rafRef.current = requestAnimationFrame(loop);
     };
+
+    // Handle tab visibility: cancel & restart RAF to avoid stale loops
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Always cancel any existing RAF before starting a fresh one
+        if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+        clock.getDelta(); // flush stale dt to prevent a huge jump
+        rafRef.current = requestAnimationFrame(loop);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     rafRef.current = requestAnimationFrame(loop);
 
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
       else window.removeEventListener('resize', handleResize);

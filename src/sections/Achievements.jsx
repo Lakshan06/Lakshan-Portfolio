@@ -27,6 +27,11 @@ import dhan2      from "../assets/dhan2.jpg";
 import vibestate1 from "../assets/vibestate1.jpg";
 import ec1        from "../assets/ec1.jpg";
 
+const IS_MOBILE =
+  typeof window !== 'undefined' &&
+  (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    window.matchMedia('(max-width: 768px)').matches);
+
 /* ─── CSS injected once ────────────────────────────────────── */
 const STYLES = `
   @keyframes ach-close-pop {
@@ -190,6 +195,16 @@ const STYLES = `
     width: 6px; height: 6px;
     border-radius: 50%;
     animation: ach-pulse-dot 1.8s ease-in-out infinite;
+  }
+
+  /* ── Mobile: disable continuous animations for performance ── */
+  @media (max-width: 768px) {
+    .ach-card:hover .ach-card-inner { transform: none; }
+    .ach-card:hover .ach-card-inner::after { animation: none; }
+    .ach-card-inner { backdrop-filter: none; -webkit-backdrop-filter: none; }
+    @keyframes ach-card-in-up    { from { opacity:0; } to { opacity:1; } }
+    @keyframes ach-card-in-left  { from { opacity:0; } to { opacity:1; } }
+    @keyframes ach-card-in-right { from { opacity:0; } to { opacity:1; } }
   }
 `;
 
@@ -634,7 +649,8 @@ export default function Achievements() {
             background: `radial-gradient(circle, ${b.color} 0%, transparent 65%)`,
             filter: "blur(55px)",
             pointerEvents: "none",
-            animation: `ach-blob-float ${b.dur} ease-in-out infinite ${b.dir}`,
+            /* Static on mobile — animated blurs are the heaviest GPU op */
+            animation: IS_MOBILE ? "none" : `ach-blob-float ${b.dur} ease-in-out infinite ${b.dir}`,
           }}
         />
       ))}

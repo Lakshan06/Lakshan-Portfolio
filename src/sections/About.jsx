@@ -1,6 +1,11 @@
 import { useEffect, useRef } from "react";
 import profileImg from "../assets/image1.png";
 
+const IS_MOBILE =
+  typeof window !== 'undefined' &&
+  (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    window.matchMedia('(max-width: 768px)').matches);
+
 export default function About() {
   const sectionRef  = useRef(null);
   const imgWrapRef  = useRef(null);
@@ -13,32 +18,49 @@ export default function About() {
     const content  = contentRef.current;
     if (!section || !imgWrap || !content) return;
 
-    const onScroll = () => {
+    // On mobile: skip scroll animations — just show content immediately
+    if (IS_MOBILE) {
+      imgWrap.style.opacity   = "1";
+      imgWrap.style.transform = "translateY(0)";
+      content.style.opacity   = "1";
+      content.style.transform = "translateX(0)";
+      return;
+    }
+
+    let rafId = null;
+
+    const update = () => {
       const rect     = section.getBoundingClientRect();
       const vh       = window.innerHeight;
 
-      // progress: 0 when section top enters viewport, 1 when section bottom leaves
       const rawProg  = 1 - rect.bottom / (vh + rect.height);
       const progress = Math.max(0, Math.min(1, rawProg));
 
-      /* Image: slides up 30 px and fades at top, fades in from bottom */
-      const enterFade = Math.min(1, (1 - rect.top / vh) * 2.5);          // fade in bottom
-      const exitFade  = Math.max(0, 1 - Math.max(0, progress - 0.65) * 6); // fade out top
+      const enterFade = Math.min(1, (1 - rect.top / vh) * 2.5);
+      const exitFade  = Math.max(0, 1 - Math.max(0, progress - 0.65) * 6);
       const opacity   = Math.min(enterFade, exitFade);
-      const translateY = (progress - 0.25) * -38; // gentle upward drift
+      const translateY = (progress - 0.25) * -38;
 
       imgWrap.style.opacity   = opacity.toFixed(3);
       imgWrap.style.transform = `translateY(${translateY.toFixed(2)}px)`;
 
-      /* Content: fade/slide in from right */
       const contentEnter = Math.min(1, (1 - rect.top / vh) * 2);
       content.style.opacity   = Math.max(0, contentEnter).toFixed(3);
       content.style.transform = `translateX(${(1 - Math.min(1, contentEnter)) * 40}px)`;
+
+      rafId = null;
+    };
+
+    const onScroll = () => {
+      if (rafId === null) rafId = requestAnimationFrame(update);
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll(); // run once on mount
-    return () => window.removeEventListener("scroll", onScroll);
+    update();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   return (
@@ -99,8 +121,8 @@ export default function About() {
             position:   "relative",
             display:    "flex",
             justifyContent: "center",
-            willChange: "transform, opacity",
-            transition: "transform 0.05s linear", // smooth out RAF gaps
+            willChange: IS_MOBILE ? "auto" : "transform, opacity",
+            transition: IS_MOBILE ? "none" : "transform 0.05s linear",
           }}
         >
           {/* Rotating ring */}
@@ -116,7 +138,7 @@ export default function About() {
               position: "absolute", inset: -2, borderRadius: "50%",
               background: "conic-gradient(from 0deg, #a78bfa, #00ffd1, #ff5c7a, #a78bfa)",
               zIndex: -1,
-              animation: "spinRing 6s linear infinite",
+              animation: IS_MOBILE ? "none" : "spinRing 6s linear infinite",
               WebkitMaskImage: "radial-gradient(transparent 70%, black 71%)",
               maskImage: "radial-gradient(transparent 70%, black 71%)",
             }} />
@@ -130,7 +152,7 @@ export default function About() {
             background: "radial-gradient(circle, rgba(138,92,255,0.35) 0%, transparent 70%)",
             top: "50%", left: "50%",
             transform: "translate(-50%,-50%)",
-            animation: "pulseGlow 3s ease-in-out infinite",
+            animation: IS_MOBILE ? "none" : "pulseGlow 3s ease-in-out infinite",
             zIndex: 0,
           }} />
 
@@ -177,7 +199,7 @@ export default function About() {
                 borderRadius: "1.6rem 1.6rem 1.6rem 0.2rem",
                 objectFit:    "cover",
                 filter:       "contrast(1.05) brightness(1.03)",
-                animation:    "floatImg 5s ease-in-out infinite",
+                animation:    IS_MOBILE ? "none" : "floatImg 5s ease-in-out infinite",
               }}
             />
           </div>

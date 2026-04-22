@@ -159,6 +159,12 @@ const FuzzyText = ({
       const run = timestamp => {
         if (isCancelled) return;
 
+        // Pause canvas rendering when tab is not visible
+        if (document.visibilityState === 'hidden') {
+          animationFrameId = window.requestAnimationFrame(run);
+          return;
+        }
+
         if (timestamp - lastFrameTime < frameDuration) {
           animationFrameId = window.requestAnimationFrame(run);
           return;
